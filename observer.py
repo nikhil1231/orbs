@@ -25,6 +25,7 @@ def construct_oracle(project_dir, run_command_, compilation_instructions_=[]):
     for instruction in compilation_instructions:
         exit_code = run(instruction.split(' '), capture_output=True, cwd=project_dir)
 
+    global oracle
     oracle = run(run_command.split(' '), capture_output=True, cwd=project_dir)
     print(oracle)
 
@@ -34,8 +35,22 @@ def observe_slice(slice_dir):
     # run main file (stored as global variable)
     # observe slice output
     # return whether or not slice output is the same as oracle
-    return True
+
+    global run_command
+    global compilation_instructions
+
+    for instruction in compilation_instructions:
+        exit_code = run(instruction.split(' '), capture_output=True, cwd=slice_dir)
+
+    global oracle
+    observation = run(run_command.split(' '), capture_output=True, cwd=slice_dir)
+
+    valid = oracle.returncode == observation.returncode
+    valid = valid and oracle.stderr == observation.stderr
+    valid = valid and oracle.stdout == observation.stdout
+    return valid
 
 
 if __name__ == "__main__":
     construct_oracle('./projects/c/ex-1/', './a.out 4 5', ['gcc main.c'])
+    print(observe_slice('./projects/c/ex-1/'))
