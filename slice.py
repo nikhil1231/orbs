@@ -1,13 +1,23 @@
 # main file, run from here to run the entire program
-import xml
+import sys
+import xml.etree.ElementTree as ET
 
+def dummy_observer():
+    return True;
 
-def slice_tree(tree, observer_function):
-    # tree is the tree to be sliced
+def slice_tree(root, observer_function):
+    # root is the tree to be sliced
     # observer function is a function that returns whether or not the slice is valid
         # which will be different for directory slices vs file slices, so we pass it in ourselves
     # consider different ways to slice the tree (in terms of node traversal order)
-    pass
+
+    # BFS
+    queue = [root]
+
+    for child in queue:
+        print child.tag, child.attrib
+        for next_child in child:
+            queue.append(next_child)
 
 
 if __name__ == "__main__":
@@ -18,4 +28,10 @@ if __name__ == "__main__":
     # once we have a minimal directory, start slicing individual files
     # convert project directory to srcML directory with util file and slice file trees
     # (the order we traverse the directory with files to slice as well as the order we slice files in is something to test)
-    pass
+
+    '''Usage: python slice.py <name>.xml
+
+    Currently only works on single files
+    '''
+    tree = ET.parse(sys.argv[1])
+    slice_tree(tree.getroot(), dummy_observer)
