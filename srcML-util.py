@@ -2,6 +2,7 @@
 import os
 import shutil
 
+
 def dir_to_xml(path):
     # convert project directory to srcML directory
     working_directory = path + '_sliced'
@@ -13,10 +14,10 @@ def dir_to_xml(path):
                 continue
             else:
                 file_path = root + '/' + source_file
-                xml_source = file_path.strip(file_extension) + '.xml'
+                xml_source = file_path.strip(file_extension) + 'xml'
                 os.system('./srcml ' + file_path + ' -o ' + xml_source)
                 os.system('rm ' + file_path)
-
+    
 
 def xml_to_dir(path):
     working_directory = path + '_sliced'
@@ -25,6 +26,7 @@ def xml_to_dir(path):
             file_extension = determine_extension(source_file)
             if (file_extension == 'xml'):
                 file_path = root + '/' + source_file
+                print(file_path)
                 os.system('./srcml --to-dir . ' + file_path)
                 os.system('rm ' + file_path)
 
