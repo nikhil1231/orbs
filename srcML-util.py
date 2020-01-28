@@ -19,12 +19,11 @@ def dir_to_xml(path):
                 os.system('rm ' + file_path)
     
 
-def xml_to_dir(path):
+def xml_to_dir(path): #call this function with the original path, not the '[original]_sliced' path
     working_directory = path + '_sliced'
     for (root,dirs,files) in os.walk(working_directory, topdown=True):
         for source_file in files:
-            file_extension = determine_extension(source_file)
-            if (file_extension == 'xml'):
+            if (determine_extension(source_file) == 'xml'):
                 file_path = root + '/' + source_file
                 print(file_path)
                 os.system('./srcml --to-dir . ' + file_path)
@@ -32,7 +31,7 @@ def xml_to_dir(path):
 
 
 def determine_extension(src):
-    valid_extensions = ['xml','c', 'cpp', 'cc', 'java', 'c#']
+    valid_extensions = ['xml','c', 'cpp', 'cc', 'java', 'c#'] #extensions supported by srcML
     extension = src.split('.')[-1]
     if valid_extensions.count(extension) == 1:
         return extension
