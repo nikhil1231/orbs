@@ -1,8 +1,7 @@
 # utility file with srcML helper functions
 import os
 import shutil
-
-
+import xml.etree.ElementTree as ET
 
 # clone project directory and convert target file
 def clone_and_convert_target(directory_path, target_file_path):
@@ -14,7 +13,6 @@ def clone_and_convert_target(directory_path, target_file_path):
         xml_source = target_file_path.strip(target_file_path) + 'xml'
         os.system('./srcml ' + target_file_path + ' -o ' + xml_source)
         os.system('rm ' + target_file_path)
-    
 
 # converts the srcML code in the cloned directory back to slice code
 def xml_to_dir(path): #call this function with the original path, not the '[original]_sliced' path
@@ -35,3 +33,14 @@ def determine_extension(src):
     else:
         return 'invalid'
 
+def check_xml(src):
+    extension = src.split('.')[-1]
+    if extension == 'xml':
+        tree = ET.parse(src)
+        root = tree.getroot()
+        if root.tag == '{http://www.srcML.org/srcML/src}unit':
+            return 'valid'
+        else:
+            return 'invalid'
+    else:
+        return 'valid'
