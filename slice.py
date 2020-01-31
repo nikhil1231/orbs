@@ -4,14 +4,21 @@ import xml.etree.ElementTree as ET
 from argparse import ArgumentParser
 import os
 
+sliced_dir = ""
+sliced_target = ""
 
 def dummy_observer(tree):
     from random import random
     return random() > 0.5
 
+def observer(tree):
+    if dummy_observer(None):
+        tree.write(sliced_target)
+        return True
+    return False
 
-def slice_tree(tree, observer_function):
-    tree = ET.parse(sys.argv[1])
+
+def slice_file(tree, observer_function):
     # tree is the tree to be sliced
     # observer function is a function that returns whether or not the slice is valid
     # which will be different for directory slices vs file slices, so we pass it in ourselves
@@ -37,11 +44,15 @@ def slice_tree(tree, observer_function):
 def slice(path, target_file):
     from srcML_util import clone_and_convert_target
 
+    global sliced_dir, sliced_target
+
     sliced_dir = clone_and_convert_target(path, target_file)
 
-    sliced_target = os.path.join(sliced_dir, target_file)
+    sliced_target = os.path.join(sliced_dir, ".".join(target_file.split('.')[:-1]) + ".xml")
+
     tree = ET.parse(sliced_target)
 
+    slice_file(tree, observer)
 
 if __name__ == "__main__":
     # TODO add argparse stuff so we can run slice.py directory main_file arguments
@@ -52,7 +63,7 @@ if __name__ == "__main__":
     # convert project directory to srcML directory with util file and slice file trees
     # (the order we traverse the directory with files to slice as well as the order we slice files in is something to test)
 
-    '''Usage: python slice.py <name>.xml
+    '''Usage: python slice.py <directory> <target_file>
 
     Currently only works on single files
     '''
@@ -65,7 +76,7 @@ if __name__ == "__main__":
     project_dir = args.project_directory
     target = args.target_file_path
 
-    project_dir = os.path.abspath(project_dir)
+    # project_dir = os.path.abspath(project_dir)
 
     assert os.path.isdir(project_dir)
 
