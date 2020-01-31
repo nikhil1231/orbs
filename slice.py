@@ -1,6 +1,8 @@
 # main file, run from here to run the entire program
 import sys
 import xml.etree.ElementTree as ET
+from argparse import ArgumentParser
+import os
 
 
 def dummy_observer(tree):
@@ -32,6 +34,15 @@ def slice_tree(tree, observer_function):
     print(ET.tostring(root))
 
 
+def slice(path, target_file):
+    from srcML_util import clone_and_convert_target
+
+    sliced_dir = clone_and_convert_target(path, target_file)
+
+    sliced_target = os.path.join(sliced_dir, target_file)
+    tree = ET.parse(sliced_target)
+
+
 if __name__ == "__main__":
     # TODO add argparse stuff so we can run slice.py directory main_file arguments
     # computing a slice first involves running the main file with arguments and observing the output
@@ -45,5 +56,20 @@ if __name__ == "__main__":
 
     Currently only works on single files
     '''
-    tree = ET.parse(sys.argv[1])
-    slice_tree(tree, dummy_observer)
+
+    parser = ArgumentParser()
+    parser.add_argument('project_directory', help='The project directory to be sliced.')
+    parser.add_argument('target_file_path', help='The path of the target file to be sliced. Path must be relative to the project directory.')
+
+    args = parser.parse_args()
+    project_dir = args.project_directory
+    target = args.target_file_path
+
+    project_dir = os.path.abspath(project_dir)
+
+    assert os.path.isdir(project_dir)
+
+    full_target = os.path.join(project_dir, target)
+    assert os.path.exists(full_target)
+
+    slice(project_dir, target)
