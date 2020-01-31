@@ -3,8 +3,9 @@ import os
 import shutil
 
 
+
+# convert project directory to srcML directory
 def dir_to_xml(path):
-    # convert project directory to srcML directory
     working_directory = path + '_sliced'
     shutil.copytree(path, working_directory)
     for (root,dirs,files) in os.walk(working_directory, topdown=True):
@@ -19,6 +20,7 @@ def dir_to_xml(path):
                 os.system('rm ' + file_path)
     
 
+# converts the srcML code in the cloned directory back to slice code
 def xml_to_dir(path): #call this function with the original path, not the '[original]_sliced' path
     working_directory = path + '_sliced'
     for (root,dirs,files) in os.walk(working_directory, topdown=True):
@@ -29,9 +31,8 @@ def xml_to_dir(path): #call this function with the original path, not the '[orig
                 os.system('./srcml --to-dir . ' + file_path)
                 os.system('rm ' + file_path)
 
-
 def determine_extension(src):
-    valid_extensions = ['xml','c', 'cpp', 'cc', 'java', 'c#'] #extensions supported by srcML
+    valid_extensions = ['xml','c', 'cpp', 'cc', 'java', 'cs'] #extensions supported by srcML
     extension = src.split('.')[-1]
     if valid_extensions.count(extension) == 1:
         return extension
