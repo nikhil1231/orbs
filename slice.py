@@ -7,15 +7,25 @@ import os
 sliced_dir = ""
 sliced_target = ""
 
-def dummy_observer(tree):
-    from random import random
-    return random() > 0.5
 
 def observer(tree):
-    if dummy_observer(None):
-        tree.write(sliced_target)
-        return True
-    return False
+    # x write xml file back to sliced directory
+    # x convert sliced xml directory back to compilable sliced code
+    #  compile sliced code
+    #  execute
+    #  observe
+    # use observer.py to compare to oracle
+
+    tree.write(os.path.join(sliced_dir, sliced_target))
+    from srcML_util import convert_to_source
+    global args
+    convert_to_source(sliced_dir, sliced_target)
+
+    from observer import observe_slice
+
+    observation = observe_slice(sliced_dir)
+    # print(observation)
+    return observation
 
 
 def slice_file(tree, observer_function):
@@ -38,7 +48,14 @@ def slice_file(tree, observer_function):
             else:
                 node.append(child)
                 queue.append(child)
-    print(ET.tostring(root))
+
+    tree.write(os.path.join(sliced_dir, sliced_target))
+    from srcML_util import convert_to_source
+    convert_to_source(sliced_dir, sliced_target)
+
+    from observer import observe_slice
+
+    observation = observe_slice(sliced_dir)
 
 
 def slice(path, target_file):
@@ -48,11 +65,12 @@ def slice(path, target_file):
 
     sliced_dir = clone_and_convert_target(path, target_file)
 
-    sliced_target = os.path.join(sliced_dir, ".".join(target_file.split('.')[:-1]) + ".xml")
+    sliced_target = ".".join(target_file.split('.')[:-1]) + ".xml"
 
-    tree = ET.parse(sliced_target)
+    tree = ET.parse(os.path.join(sliced_dir, sliced_target))
 
     slice_file(tree, observer)
+
 
 if __name__ == "__main__":
     # TODO add argparse stuff so we can run slice.py directory main_file arguments
@@ -75,6 +93,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     project_dir = args.project_directory
     target = args.target_file_path
+
+    from observer import construct_oracle
+    construct_oracle(project_dir, './a.out 4 5', ['gcc main.c'])
 
     # project_dir = os.path.abspath(project_dir)
 

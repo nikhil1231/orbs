@@ -42,8 +42,14 @@ def observe_slice(slice_dir):
     for instruction in compilation_instructions:
         exit_code = run(instruction.split(' '), capture_output=True, cwd=slice_dir)
 
+    if exit_code.returncode != 0:
+        return False
+
     global oracle
-    observation = run(run_command.split(' '), capture_output=True, cwd=slice_dir)
+    try:
+        observation = run(run_command.split(' '), capture_output=True, cwd=slice_dir, timeout=2)
+    except subprocess.TimeoutExpired:
+        return False
 
     valid = oracle.returncode == observation.returncode
     valid = valid and oracle.stderr == observation.stderr
