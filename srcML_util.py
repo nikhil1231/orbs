@@ -18,9 +18,8 @@ def clone_and_convert_target(directory_path, target_file_path):
     return working_directory
 
 # converts the srcML code in the cloned directory back to slice code
-def convert_to_source(directory_path, target_file_path): #call this function with the original path, not the '[original]_sliced' path
-    working_directory = directory_path + '_sliced'
-    target_file_path = os.path.join(working_directory, target_file_path)
+def convert_to_source(directory_path, target_file_path): #call this function with the '[original]_sliced' path
+    target_file_path = os.path.join(directory_path, target_file_path)
     if (check_xml(target_file_path)):
         os.system('./srcml --to-dir . ' + target_file_path)
         os.system('rm ' + target_file_path)
