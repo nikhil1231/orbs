@@ -2,22 +2,34 @@
 import sys
 import xml.etree.ElementTree as ET
 
-def dummy_observer():
-    return True;
 
-def slice_tree(root, observer_function):
-    # root is the tree to be sliced
+def dummy_observer(tree):
+    from random import random
+    return random() > 0.5
+
+
+def slice_tree(tree, observer_function):
+    tree = ET.parse(sys.argv[1])
+    # tree is the tree to be sliced
     # observer function is a function that returns whether or not the slice is valid
-        # which will be different for directory slices vs file slices, so we pass it in ourselves
+    # which will be different for directory slices vs file slices, so we pass it in ourselves
     # consider different ways to slice the tree (in terms of node traversal order)
 
-    # BFS
+    root = tree.getroot()
     queue = [root]
 
-    for child in queue:
-        print child.tag, child.attrib
-        for next_child in child:
-            queue.append(next_child)
+    while len(queue) != 0:
+        node = queue.pop(0)
+
+        children = list(node)[:]
+        for child in children:
+            node.remove(child)
+            if observer_function(tree):
+                pass
+            else:
+                node.append(child)
+                queue.append(child)
+    print(ET.tostring(root))
 
 
 if __name__ == "__main__":
@@ -34,4 +46,4 @@ if __name__ == "__main__":
     Currently only works on single files
     '''
     tree = ET.parse(sys.argv[1])
-    slice_tree(tree.getroot(), dummy_observer)
+    slice_tree(tree, dummy_observer)

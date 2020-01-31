@@ -1,6 +1,7 @@
 .vscode
 *.out
 srcml
+projects_sliced
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
