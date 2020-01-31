@@ -3,11 +3,15 @@ Modified to take command line arguments and print result to stdout
  */
 
 #include <stdbool.h>
+#include <stdio.h>
+
+int nth(int);
 
 int main(int argc, char *argv[])
-{
-    int result = nth(argv[1]);
-    printf("The %dth prime is: %d", argv[1], result);
+{   
+    int test_number = (int)*argv[1];
+    int result = nth(*argv[1]);
+    printf("%d\n", *argv[1]);
     return 0;
 }
 
