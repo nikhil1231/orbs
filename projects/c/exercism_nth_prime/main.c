@@ -9,9 +9,10 @@ int nth(int);
 
 int main(int argc, char *argv[])
 {   
-    int test_number = (int)*argv[1];
-    int result = nth(*argv[1]);
-    printf("%d\n", *argv[1]);
+    int test_number;
+    sscanf(argv[1], "%d", &test_number);
+    int result = nth(test_number);
+    printf("The result is %d\n", result);
     return 0;
 }
 
