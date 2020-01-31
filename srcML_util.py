@@ -24,7 +24,7 @@ def convert_to_source(directory_path, target_file_path): #call this function wit
     if (check_xml(target_file_path)):
         os.system('./srcml --to-dir . ' + target_file_path)
         os.system('rm ' + target_file_path)
-    
+
 
 def determine_extension(src):
     valid_extensions = ['xml','c', 'cpp', 'cc', 'java', 'cs'] #extensions supported by srcML
@@ -41,7 +41,4 @@ def check_xml(src):
         root = tree.getroot()
         if root.tag == '{http://www.srcML.org/srcML/src}unit':
             return 1
-        else:
-            return 0
-    else:
-        return 0
+    return 0
