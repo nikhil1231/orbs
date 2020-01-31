@@ -6,6 +6,8 @@ import xml.etree.ElementTree as ET
 # clone project directory and convert target file
 def clone_and_convert_target(directory_path, target_file_path):
     working_directory = directory_path + '_sliced'
+    if (os.path.isdir(working_directory)):
+        shutil.rmtree(working_directory)
     shutil.copytree(directory_path, working_directory)
     target_file_path = os.path.join(working_directory, target_file_path)
     file_extension = determine_extension(target_file_path)
@@ -13,17 +15,16 @@ def clone_and_convert_target(directory_path, target_file_path):
         xml_source = target_file_path.strip(target_file_path) + 'xml'
         os.system('./srcml ' + target_file_path + ' -o ' + xml_source)
         os.system('rm ' + target_file_path)
+    return working_directory
 
 # converts the srcML code in the cloned directory back to slice code
-def xml_to_dir(path): #call this function with the original path, not the '[original]_sliced' path
-    working_directory = path + '_sliced'
-    for (root,dirs,files) in os.walk(working_directory, topdown=True):
-        for source_file in files:
-            if (determine_extension(source_file) == 'xml'):
-                file_path = root + '/' + source_file
-                print(file_path)
-                os.system('./srcml --to-dir . ' + file_path)
-                os.system('rm ' + file_path)
+def convert_to_source(directory_path, target_file_path): #call this function with the original path, not the '[original]_sliced' path
+    working_directory = directory_path + '_sliced'
+    target_file_path = os.path.join(working_directory, target_file_path)
+    if (determine_extension(target_file_path) == 'xml'):
+        os.system('./srcml --to-dir . ' + target_file_path)
+        os.system('rm ' + target_file_path)
+    
 
 def determine_extension(src):
     valid_extensions = ['xml','c', 'cpp', 'cc', 'java', 'cs'] #extensions supported by srcML
