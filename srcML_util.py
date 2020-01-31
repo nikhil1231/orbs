@@ -12,7 +12,7 @@ def clone_and_convert_target(directory_path, target_file_path):
     target_file_path = os.path.join(working_directory, target_file_path)
     file_extension = determine_extension(target_file_path)
     if (file_extension != 'invalid' and file_extension != 'xml'):
-        xml_source = target_file_path.strip(target_file_path) + 'xml'
+        xml_source = target_file_path.strip(file_extension) + 'xml'
         os.system('./srcml ' + target_file_path + ' -o ' + xml_source)
         os.system('rm ' + target_file_path)
     return working_directory
