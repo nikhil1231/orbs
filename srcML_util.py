@@ -21,7 +21,7 @@ def clone_and_convert_target(directory_path, target_file_path):
 def convert_to_source(directory_path, target_file_path): #call this function with the original path, not the '[original]_sliced' path
     working_directory = directory_path + '_sliced'
     target_file_path = os.path.join(working_directory, target_file_path)
-    if (determine_extension(target_file_path) == 'xml'):
+    if (check_xml(target_file_path) == 'valid'):
         os.system('./srcml --to-dir . ' + target_file_path)
         os.system('rm ' + target_file_path)
     
@@ -44,4 +44,4 @@ def check_xml(src):
         else:
             return 'invalid'
     else:
-        return 'valid'
+        return 'invalid'
