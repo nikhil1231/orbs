@@ -21,7 +21,7 @@ def clone_and_convert_target(directory_path, target_file_path):
 def convert_to_source(directory_path, target_file_path): #call this function with the original path, not the '[original]_sliced' path
     working_directory = directory_path + '_sliced'
     target_file_path = os.path.join(working_directory, target_file_path)
-    if (check_xml(target_file_path) == 'valid'):
+    if (check_xml(target_file_path)):
         os.system('./srcml --to-dir . ' + target_file_path)
         os.system('rm ' + target_file_path)
     
@@ -40,8 +40,8 @@ def check_xml(src):
         tree = ET.parse(src)
         root = tree.getroot()
         if root.tag == '{http://www.srcML.org/srcML/src}unit':
-            return 'valid'
+            return 1
         else:
-            return 'invalid'
+            return 0
     else:
-        return 'invalid'
+        return 0
