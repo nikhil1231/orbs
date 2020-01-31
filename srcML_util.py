@@ -4,20 +4,16 @@ import shutil
 
 
 
-# convert project directory to srcML directory
-def dir_to_xml(path):
-    working_directory = path + '_sliced'
-    shutil.copytree(path, working_directory)
-    for (root,dirs,files) in os.walk(working_directory, topdown=True):
-        for source_file in files:
-            file_extension = determine_extension(source_file)
-            if (file_extension == 'invalid' or file_extension == 'xml'):
-                continue
-            else:
-                file_path = root + '/' + source_file
-                xml_source = file_path.strip(file_extension) + 'xml'
-                os.system('./srcml ' + file_path + ' -o ' + xml_source)
-                os.system('rm ' + file_path)
+# clone project directory and convert target file
+def clone_and_convert_target(directory_path, target_file_path):
+    working_directory = directory_path + '_sliced'
+    shutil.copytree(directory_path, working_directory)
+    target_file_path = os.path.join(working_directory, target_file_path)
+    file_extension = determine_extension(target_file_path)
+    if (file_extension != 'invalid' and file_extension != 'xml'):
+        xml_source = target_file_path.strip(target_file_path) + 'xml'
+        os.system('./srcml ' + target_file_path + ' -o ' + xml_source)
+        os.system('rm ' + target_file_path)
     
 
 # converts the srcML code in the cloned directory back to slice code
