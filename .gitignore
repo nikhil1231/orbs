@@ -132,3 +132,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# library and binary files
+.srcml
+.libsrcml.a
+.libsrcml.dylib
