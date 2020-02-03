@@ -1,8 +1,8 @@
 .vscode
 *.out
 srcml
-projects_sliced
 .DS_Store
+*_sliced
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
