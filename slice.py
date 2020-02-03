@@ -3,18 +3,13 @@ import sys
 import xml.etree.ElementTree as ET
 from argparse import ArgumentParser
 import os
+from tqdm import tqdm
 
 sliced_dir = ""
 sliced_target = ""
 
 
 def observer(tree):
-    # x write xml file back to sliced directory
-    # x convert sliced xml directory back to compilable sliced code
-    #  compile sliced code
-    #  execute
-    #  observe
-    # use observer.py to compare to oracle
 
     tree.write(os.path.join(sliced_dir, sliced_target))
     from srcML_util import convert_to_source
@@ -36,40 +31,56 @@ def slice_file(tree, observer_function):
 
     root = tree.getroot()
     queue = [root]
+    total_nodes = sum(1 for _ in root.iter("*"))
+    traversed_nodes = 0
 
-    while len(queue) != 0:
-        node = queue.pop(0)
-
-        children = list(node)[:]
-        for child in children:
-            node.remove(child)
-            if observer_function(tree):
-                pass
-            else:
-                node.append(child)
-                queue.append(child)
+    # while len(queue) != 0:
+    for i in tqdm(range(total_nodes)):
+        if len(queue) > 0:
+            node = queue.pop(0)
+            traversed_nodes += 1
+            children = list(node)[:]
+            for child in children:
+                node.remove(child)
+                if observer_function(tree):
+                    # we removed all subelements in with the child, equivalent to traversing them
+                    traversed_nodes += (sum(1 for _ in child.iter("*")))
+                else:
+                    node.append(child)
+                    queue.append(child)
+        i = traversed_nodes
+        # print(f'{traversed_nodes} / {total_nodes}')
 
     tree.write(os.path.join(sliced_dir, sliced_target))
     from srcML_util import convert_to_source
     convert_to_source(sliced_dir, sliced_target)
 
-    from observer import observe_slice
+    print('slice complete, recompiling project')
+    from observer import compile_project
 
-    observation = observe_slice(sliced_dir)
+    compile_project(sliced_dir)
 
 
 def slice(path, target_file):
     from srcML_util import clone_and_convert_target
 
     global sliced_dir, sliced_target
-
+    print('creating cloned xml-ified project')
     sliced_dir = clone_and_convert_target(path, target_file)
 
     sliced_target = ".".join(target_file.split('.')[:-1]) + ".xml"
 
     tree = ET.parse(os.path.join(sliced_dir, sliced_target))
-
+    print('beginning slice...')
     slice_file(tree, observer)
+
+    original_file_length = len(open(os.path.join(path, target_file), 'r').readlines())
+    sliced_file_length = len(open(os.path.join(sliced_dir, sliced_target), 'r').readlines())
+
+    print(f'original file length: {original_file_length}')
+    print(f'sliced file length: {sliced_file_length}')
+
+    print(f'{round((original_file_length - sliced_file_length) / original_file_length * 100.0, 2)}% reduction in file size')
 
 
 if __name__ == "__main__":
@@ -93,6 +104,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     project_dir = args.project_directory
     target = args.target_file_path
+
+    print('=' * 10 + 'slice.py' + '=' * 10)
 
     from observer import construct_oracle
     construct_oracle(project_dir, './a.out 4 5', ['gcc main.c'])
