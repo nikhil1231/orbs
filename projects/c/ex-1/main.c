@@ -1,7 +1,6 @@
 // example file to be sliced
 
-#include <stdio.h>
-#include <stdlib.h>
+#include "extras/main.h"
 
 int main(int argc, char *argv[])
 {
@@ -16,6 +15,7 @@ int main(int argc, char *argv[])
     sscanf(argv[2], "%d", &b);
     if (b > 0)
     {
+        a = 7;
         for (int i = 0; i < 10; ++i)
         {
             a = a + b;
