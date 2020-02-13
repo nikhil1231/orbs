@@ -4,18 +4,21 @@ import xml.etree.ElementTree as ET
 from argparse import ArgumentParser
 import os
 from tqdm import tqdm
+import shutil
 
 sliced_dir = ""
 sliced_target = ""
 
 
-def observer(tree):
-
-    tree.write(os.path.join(sliced_dir, sliced_target))
+def observer(tree=None):
+    if tree:
+        tree.write(os.path.join(sliced_dir, sliced_target))
     from srcML_util import convert_to_source
-    global args
-    convert_to_source(sliced_dir, sliced_target)
-
+    # global args
+    try:
+        convert_to_source(sliced_dir, sliced_target)
+    except:
+        return False
     from observer import observe_slice
 
     observation = observe_slice(sliced_dir)
@@ -24,6 +27,7 @@ def observer(tree):
 
 
 def slice_file(tree, observer_function):
+    print('performing file slice')
     # tree is the tree to be sliced
     # observer function is a function that returns whether or not the slice is valid
     # which will be different for directory slices vs file slices, so we pass it in ourselves
@@ -34,23 +38,22 @@ def slice_file(tree, observer_function):
     total_nodes = sum(1 for _ in root.iter("*"))
     traversed_nodes = 0
 
-    # while len(queue) != 0:
-    for i in tqdm(range(total_nodes)):
-        if len(queue) > 0:
-            node = queue.pop(0)
-            traversed_nodes += 1
-            children = list(node)[:]
-            for child in children:
-                node.remove(child)
-                if observer_function(tree):
-                    # we removed all subelements in with the child, equivalent to traversing them
-                    traversed_nodes += (sum(1 for _ in child.iter("*")))
-                else:
-                    node.append(child)
-                    queue.append(child)
-        i = traversed_nodes
-        # print(f'{traversed_nodes} / {total_nodes}')
-
+    pbar = tqdm(total=total_nodes)
+    # for i in tqdm(range(total_nodes)):
+    while len(queue) != 0:
+        node = queue.pop(0)
+        traversed_nodes = 1
+        children = list(node)[:]
+        for child in children:
+            node.remove(child)
+            if observer_function(tree):
+                # we removed all subelements in with the child, equivalent to traversing them
+                traversed_nodes += (sum(1 for _ in child.iter("*")))
+            else:
+                node.append(child)
+                queue.append(child)
+        pbar.update(traversed_nodes)
+    pbar.close()
     tree.write(os.path.join(sliced_dir, sliced_target))
     from srcML_util import convert_to_source
     convert_to_source(sliced_dir, sliced_target)
@@ -59,6 +62,73 @@ def slice_file(tree, observer_function):
     from observer import compile_project
 
     compile_project(sliced_dir)
+
+
+def slice_directory(observer_function):
+    print('performing directory-level slice')
+    # walk the directory
+    # make copies of things we want to delete inside a temp folder
+    # delete the thing
+    # observe
+    # move on or copy back in the saved folder/file
+    # note that the queue only contains directories, since we test file removal for each directory
+    queue = [sliced_dir]
+    if os.path.isdir('./temp'):
+        shutil.rmtree('./temp')
+    os.mkdir('./temp')
+
+    total_files = sum([len(files) for r, d, files in os.walk(sliced_dir)])
+
+    # pbar = tqdm(total=total_files)
+    while len(queue) != 0:
+        dir_path = queue.pop(0)
+        if os.path.isdir(dir_path):
+            traversed_files = 0
+            children = os.listdir(dir_path)
+            # print('d', dir_path)
+            # print('c', children)
+            for child in children:
+                full_path = os.path.join(dir_path, child)
+                # print(child, full_path)
+                if os.path.isdir(full_path):
+                    traversed_files = 0
+                    # try removal and observe
+                    # counting subdirectories that might get removed
+                    subdir_count = sum([len(files) for r, d, files in os.walk(full_path)])
+                    # print('sbc', child, subdir_count)
+                    # saving copy of directory and removing
+                    shutil.copytree(full_path, f'./temp/{child}')
+                    shutil.rmtree(full_path)
+
+                    traversed_files = subdir_count
+                    observation = observer_function(False)  # replace this with real observer func
+                    if observation:
+                        # we can remove, dont do anything
+                        pass
+                    else:
+                        # we are unable to remove this directory, add it back in and append it's children paths to the queu
+                        shutil.move(f'./temp/{child}', full_path)
+                        for subdir in os.listdir(full_path):
+                            queue.append(os.path.join(full_path, subdir))
+                else:
+                    # remove file and observe
+                    traversed_files = 1
+                    shutil.copy(full_path, f'./temp/{child}')
+                    os.remove(full_path)
+
+                    observation = observer_function(False)  # replace this with real observer func
+                    if observation:
+                        # we can remove, dont do anything
+                        pass
+                    else:
+                        # we are unable to remove this file, add it back
+                        shutil.move(f'./temp/{child}', full_path)
+    #         print(traversed_files)
+    #         pbar.update(traversed_files)
+    # pbar.close()
+
+    shutil.rmtree('./temp')
+    pass
 
 
 def slice(path, target_file):
@@ -72,7 +142,10 @@ def slice(path, target_file):
 
     tree = ET.parse(os.path.join(sliced_dir, sliced_target))
     print('beginning slice...')
+    slice_directory(observer)
     slice_file(tree, observer)
+
+    # TODO instead of just counting main file lines, also test total filesize of the project
 
     original_file_length = len(open(os.path.join(path, target_file), 'r').readlines())
     sliced_file_length = len(open(os.path.join(sliced_dir, sliced_target), 'r').readlines())
