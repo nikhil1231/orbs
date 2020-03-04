@@ -5,13 +5,16 @@ from argparse import ArgumentParser
 import os
 from tqdm import tqdm
 import shutil
+from srcML_util import clone_and_convert_target
+import json
+
 
 sliced_dir = ""
 sliced_target = ""
 
 
 def observer(tree=None):
-    if tree:
+    if tree is not None:
         tree.write(os.path.join(sliced_dir, sliced_target))
     from srcML_util import convert_to_source
     # global args
@@ -26,34 +29,43 @@ def observer(tree=None):
     return observation
 
 
-def slice_file(tree, observer_function):
+def slice_file(tree, observer_function, ordering=[]):
     print('performing file slice')
+    print(ordering)
     # tree is the tree to be sliced
     # observer function is a function that returns whether or not the slice is valid
-    # which will be different for directory slices vs file slices, so we pass it in ourselves
     # consider different ways to slice the tree (in terms of node traversal order)
 
     root = tree.getroot()
     queue = [root]
-    total_nodes = sum(1 for _ in root.iter("*"))
-    traversed_nodes = 0
-
-    pbar = tqdm(total=total_nodes)
-    # for i in tqdm(range(total_nodes)):
+    ordered_nodes = []
     while len(queue) != 0:
         node = queue.pop(0)
-        traversed_nodes = 1
         children = list(node)[:]
         for child in children:
-            node.remove(child)
-            if observer_function(tree):
-                # we removed all subelements in with the child, equivalent to traversing them
-                traversed_nodes += (sum(1 for _ in child.iter("*")))
-            else:
-                node.append(child)
-                queue.append(child)
-        pbar.update(traversed_nodes)
-    pbar.close()
+            ordered_nodes.append((node, child))
+            queue.append(child)
+
+    ordered_nodes = sorted(ordered_nodes, key=lambda x: sort_nodes_by_type(x, ordering))
+
+    slice_progress_bar = tqdm(total=len(ordered_nodes))
+
+    while len(ordered_nodes):
+        parent, child = ordered_nodes.pop(0)
+        parent.remove(child)
+        slice_progress_bar.update(1)
+        if observer_function(tree):
+            # TODO remove all subnodes from exploration list as well
+            parents_to_remove = set([child])
+            while len(parents_to_remove):
+                removal_parent = parents_to_remove.pop()
+                new_parents = set(list(map(lambda x: x[1], filter(lambda x: x[0] == removal_parent, ordered_nodes))))
+                slice_progress_bar.update(len(new_parents))
+                parents_to_remove = parents_to_remove.union(new_parents)
+                ordered_nodes = list(filter(lambda x: x[0] != removal_parent, ordered_nodes))
+        else:
+            parent.append(child)
+    slice_progress_bar.close()
     tree.write(os.path.join(sliced_dir, sliced_target))
     from srcML_util import convert_to_source
     convert_to_source(sliced_dir, sliced_target)
@@ -62,6 +74,21 @@ def slice_file(tree, observer_function):
     from observer import compile_project
 
     compile_project(sliced_dir)
+
+
+def get_node_type(node):
+    node_type = node.tag
+    node_type = node_type[len('[http://www.srcML.org/srcML/src]'):]
+    return node_type
+
+
+def sort_nodes_by_type(node_pair, ordering=[]):
+    node_type = get_node_type(node_pair[1])
+    # sorting will order the elements like this list
+    # unlisted elements will be left unordered
+    if node_type in ordering:
+        return ordering.index(node_type)
+    return len(ordering)
 
 
 def slice_directory(observer_function):
@@ -101,7 +128,7 @@ def slice_directory(observer_function):
                     shutil.rmtree(full_path)
 
                     traversed_files = subdir_count
-                    observation = observer_function(False)  # replace this with real observer func
+                    observation = observer_function()  # replace this with real observer func
                     if observation:
                         # we can remove, dont do anything
                         pass
@@ -116,7 +143,7 @@ def slice_directory(observer_function):
                     shutil.copy(full_path, f'./temp/{child}')
                     os.remove(full_path)
 
-                    observation = observer_function(False)  # replace this with real observer func
+                    observation = observer_function()  # replace this with real observer func
                     if observation:
                         # we can remove, dont do anything
                         pass
@@ -131,63 +158,53 @@ def slice_directory(observer_function):
     pass
 
 
-def slice(path, target_file):
-    from srcML_util import clone_and_convert_target
+def calc_slice_reduction(path, target_file):
+    original_file_length = len(open(os.path.join(path, target_file), 'r').readlines())
+    sliced_file_length = len(open(os.path.join(sliced_dir, sliced_target), 'r').readlines())
+    return (original_file_length - sliced_file_length) / original_file_length * 100.0
+
+
+def slice(path, target_file, order):
 
     global sliced_dir, sliced_target
     print('creating cloned xml-ified project')
     sliced_dir = clone_and_convert_target(path, target_file)
-
     sliced_target = ".".join(target_file.split('.')[:-1]) + ".xml"
-
     tree = ET.parse(os.path.join(sliced_dir, sliced_target))
-    print('beginning slice...')
-    slice_directory(observer)
-    slice_file(tree, observer)
 
+    print('beginning slice...')
+
+    import sys
+
+    slice_directory(observer)
+    slice_file(tree, observer, order)
     # TODO instead of just counting main file lines, also test total filesize of the project
 
-    original_file_length = len(open(os.path.join(path, target_file), 'r').readlines())
-    sliced_file_length = len(open(os.path.join(sliced_dir, sliced_target), 'r').readlines())
 
-    print(f'original file length: {original_file_length}')
-    print(f'sliced file length: {sliced_file_length}')
+def init_slicer():
+    "loads config file, constructs oracle and returns config file"
+    import json
+    with open('./config.json', 'r') as config_file:
+        config = json.load(config_file)
+    print(config)
 
-    print(f'{round((original_file_length - sliced_file_length) / original_file_length * 100.0, 2)}% reduction in file size')
+    from observer import construct_oracle
+    construct_oracle(config['project_dir'], config['run_command'], config['compilation_instructions'])
+
+    assert os.path.isdir(config['project_dir'])
+
+    full_target = os.path.join(config['project_dir'], config['target_file'])
+    assert os.path.exists(full_target)
+    return config
 
 
 if __name__ == "__main__":
-    # TODO add argparse stuff so we can run slice.py directory main_file arguments
     # computing a slice first involves running the main file with arguments and observing the output
     # store the expected output in an oracle (inside observer.py)
     # then do directory-level slicing, try removing subdirectories and files using the same tree-slicing
     # once we have a minimal directory, start slicing individual files
     # convert project directory to srcML directory with util file and slice file trees
     # (the order we traverse the directory with files to slice as well as the order we slice files in is something to test)
-
-    '''Usage: python slice.py <directory> <target_file>
-
-    Currently only works on single files
-    '''
-
-    parser = ArgumentParser()
-    parser.add_argument('project_directory', help='The project directory to be sliced.')
-    parser.add_argument('target_file_path', help='The path of the target file to be sliced. Path must be relative to the project directory.')
-
-    args = parser.parse_args()
-    project_dir = args.project_directory
-    target = args.target_file_path
-
     print('=' * 10 + 'slice.py' + '=' * 10)
-
-    from observer import construct_oracle
-    construct_oracle(project_dir, './a.out 4 5', ['gcc main.c'])
-
-    # project_dir = os.path.abspath(project_dir)
-
-    assert os.path.isdir(project_dir)
-
-    full_target = os.path.join(project_dir, target)
-    assert os.path.exists(full_target)
-
-    slice(project_dir, target)
+    config = init_slicer()
+    slice(config['project_dir'], config['target_file'], [])
