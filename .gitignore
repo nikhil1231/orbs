@@ -3,6 +3,7 @@
 srcml
 .DS_Store
 *_sliced
+results.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
