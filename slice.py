@@ -52,6 +52,7 @@ def slice_file(tree, observer_function, ordering=[]):
 
     while len(ordered_nodes):
         parent, child = ordered_nodes.pop(0)
+        child_index = list(parent).index(child)
         parent.remove(child)
         slice_progress_bar.update(1)
         if observer_function(tree):
@@ -64,7 +65,7 @@ def slice_file(tree, observer_function, ordering=[]):
                 parents_to_remove = parents_to_remove.union(new_parents)
                 ordered_nodes = list(filter(lambda x: x[0] != removal_parent, ordered_nodes))
         else:
-            parent.append(child)
+            parent.insert(child_index, child)
     slice_progress_bar.close()
     tree.write(os.path.join(sliced_dir, sliced_target))
     from srcML_util import convert_to_source
