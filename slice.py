@@ -35,43 +35,49 @@ def slice_file(tree, observer_function, ordering=[]):
     # tree is the tree to be sliced
     # observer function is a function that returns whether or not the slice is valid
     # consider different ways to slice the tree (in terms of node traversal order)
+    tree_changed = True
+    passes = 0
+    while tree_changed:
+        passes += 1
+        tree_changed = False
+        root = tree.getroot()
+        queue = [root]
+        ordered_nodes = []
+        while len(queue) != 0:
+            node = queue.pop(0)
+            children = list(node)[:]
+            for child in children:
+                ordered_nodes.append((node, child))
+                queue.append(child)
 
-    root = tree.getroot()
-    queue = [root]
-    ordered_nodes = []
-    while len(queue) != 0:
-        node = queue.pop(0)
-        children = list(node)[:]
-        for child in children:
-            ordered_nodes.append((node, child))
-            queue.append(child)
+        ordered_nodes = sorted(ordered_nodes, key=lambda x: sort_nodes_by_type(x, ordering))
 
-    ordered_nodes = sorted(ordered_nodes, key=lambda x: sort_nodes_by_type(x, ordering))
+        slice_progress_bar = tqdm(total=len(ordered_nodes))
 
-    slice_progress_bar = tqdm(total=len(ordered_nodes))
+        while len(ordered_nodes):
+            parent, child = ordered_nodes.pop(0)
+            child_index = list(parent).index(child)
+            parent.remove(child)
+            slice_progress_bar.update(1)
+            if observer_function(tree):
+                tree_changed = True
 
-    while len(ordered_nodes):
-        parent, child = ordered_nodes.pop(0)
-        child_index = list(parent).index(child)
-        parent.remove(child)
-        slice_progress_bar.update(1)
-        if observer_function(tree):
-            # TODO remove all subnodes from exploration list as well
-            parents_to_remove = set([child])
-            while len(parents_to_remove):
-                removal_parent = parents_to_remove.pop()
-                new_parents = set(list(map(lambda x: x[1], filter(lambda x: x[0] == removal_parent, ordered_nodes))))
-                slice_progress_bar.update(len(new_parents))
-                parents_to_remove = parents_to_remove.union(new_parents)
-                ordered_nodes = list(filter(lambda x: x[0] != removal_parent, ordered_nodes))
-        else:
-            parent.insert(child_index, child)
-    slice_progress_bar.close()
-    tree.write(os.path.join(sliced_dir, sliced_target))
+                # removing all subelements from search list
+                parents_to_remove = set([child])
+                while len(parents_to_remove):
+                    removal_parent = parents_to_remove.pop()
+                    new_parents = set(list(map(lambda x: x[1], filter(lambda x: x[0] == removal_parent, ordered_nodes))))
+                    slice_progress_bar.update(len(new_parents))
+                    parents_to_remove = parents_to_remove.union(new_parents)
+                    ordered_nodes = list(filter(lambda x: x[0] != removal_parent, ordered_nodes))
+            else:
+                parent.insert(child_index, child)
+        slice_progress_bar.close()
+        tree.write(os.path.join(sliced_dir, sliced_target))
     from srcML_util import convert_to_source
     convert_to_source(sliced_dir, sliced_target)
 
-    print('slice complete, recompiling project')
+    print(f'file slice complete in {passes} passes, recompiling project')
     from observer import compile_project
 
     compile_project(sliced_dir)
@@ -165,7 +171,7 @@ def calc_slice_reduction(path, target_file):
     return (original_file_length - sliced_file_length) / original_file_length * 100.0
 
 
-def slice(path, target_file, order):
+def slice(path, target_file, order, should_slice_directory=True):
 
     global sliced_dir, sliced_target
     print('creating cloned xml-ified project')
@@ -176,8 +182,8 @@ def slice(path, target_file, order):
     print('beginning slice...')
 
     import sys
-
-    slice_directory(observer)
+    if should_slice_directory:
+        slice_directory(observer)
     slice_file(tree, observer, order)
     # TODO instead of just counting main file lines, also test total filesize of the project
 
