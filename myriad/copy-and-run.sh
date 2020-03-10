@@ -1,4 +1,4 @@
-cp -R /home/zcabyih/orbs $TMPDIR/orbs
+cp -R /home/zcabyih/Scratch/orbs $TMPDIR/orbs
 chmod 700 $TMPDIR/orbs
 
 python3 $TMPDIR/orbs/slice.py -o if >> /home/zcabyih/Scratch/out.txt
