@@ -1,6 +1,0 @@
-{
-	"project_dir": "./projects/c/ex-1",
-	"target_file": "main.c",
-	"run_command": "./a.out 4 5",
-	"compilation_instructions": ["gcc main.c"]
-}

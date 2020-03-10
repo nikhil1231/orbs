@@ -194,10 +194,10 @@ def slice(path, target_file, order, should_slice_directory=True):
     # TODO instead of just counting main file lines, also test total filesize of the project
 
 
-def init_slicer():
+def init_slicer(config_path='./config.json'):
     "loads config file, constructs oracle and returns config file"
     import json
-    with open('./config.json', 'r') as config_file:
+    with open(config_path, 'r') as config_file:
         config = json.load(config_file)
     print(config)
 
