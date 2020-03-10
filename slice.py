@@ -36,6 +36,7 @@ def slice_file(tree, observer_function, ordering=[]):
     # observer function is a function that returns whether or not the slice is valid
     # consider different ways to slice the tree (in terms of node traversal order)
     tree_changed = True
+    operation_count = 0
     passes = 0
     while tree_changed:
         passes += 1
@@ -64,6 +65,7 @@ def slice_file(tree, observer_function, ordering=[]):
             parent, child = ordered_nodes.pop(0)
             child_index = list(parent).index(child)
             parent.remove(child)
+            operation_count += 1
             slice_progress_bar.update(1)
             if observer_function(tree):
                 tree_changed = True
@@ -87,6 +89,7 @@ def slice_file(tree, observer_function, ordering=[]):
     from observer import compile_project
 
     compile_project(sliced_dir)
+    return operation_count
 
 
 def get_node_type(node):
@@ -173,7 +176,7 @@ def slice_directory(observer_function):
 
 def calc_slice_reduction(path, target_file):
     original_file_length = len(open(os.path.join(path, target_file), 'r').readlines())
-    sliced_file_length = len(open(os.path.join(sliced_dir, sliced_target), 'r').readlines())
+    sliced_file_length = len(open(os.path.join(sliced_dir, target_file), 'r').readlines())
     return (original_file_length - sliced_file_length) / original_file_length * 100.0
 
 
@@ -190,8 +193,9 @@ def slice(path, target_file, order, should_slice_directory=True):
     import sys
     if should_slice_directory:
         slice_directory(observer)
-    slice_file(tree, observer, order)
-    # TODO instead of just counting main file lines, also test total filesize of the project
+    file_slice_operation_count = slice_file(tree, observer, order)
+
+    return file_slice_operation_count
 
 
 def init_slicer(config_path='./config.json'):
@@ -231,5 +235,19 @@ if __name__ == "__main__":
     print(args)
     config = init_slicer()
     # TODO add directory as an order option
-    slice(config['project_dir'], config['target_file'], args.order)
-    print(calc_slice_reduction(config['project_dir'], config['target_file']))
+    file_slice_operation_count = slice(config['project_dir'], config['target_file'], args.order)
+    reduction_percent = calc_slice_reduction(config['project_dir'], config['target_file'])
+    results = {"file_slice_operation_count": file_slice_operation_count, "reduction_percent": reduction_percent}
+
+    # renaming and saving a copy of the sliced directory
+    archive_name = f'{config["project_dir"]}_{args.order}_{args.slice_all_nodes}_{args.slice_only_order}'
+    i = 0
+    while os.path.isdir(f'{archive_name}_{i}_sliced'):
+        # TODO should really check if the configs are both the same here
+        i += 1
+    archive_name = f'{archive_name}_{i}_sliced'
+    shutil.move(sliced_dir, archive_name)
+    shutil.copy('./config.json', archive_name + '/config.json')
+
+    with open(archive_name + '/results.json', 'w+') as results_file:
+        results_file.write(json.dumps(results, indent=4))
