@@ -12,7 +12,7 @@
 #$ -l tmpfs=10G
 
 # Set the name of the job.
-#$ -N Serial_Job
+#$ -N mg-orbs-single
 
 # Set the working directory to somewhere in your scratch space.  
 #  This is a necessary step as compute nodes cannot write to $HOME.
