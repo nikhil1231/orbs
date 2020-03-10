@@ -7,8 +7,7 @@ import xml.etree.ElementTree as ET
 
 
 def clone_and_convert_target(directory_path, target_file_path):
-    import time
-    working_directory = directory_path + f'_{int(time.time())}' + '_sliced'
+    working_directory = directory_path + '_sliced'
     if (os.path.isdir(working_directory)):
         shutil.rmtree(working_directory)
     shutil.copytree(directory_path, working_directory)
