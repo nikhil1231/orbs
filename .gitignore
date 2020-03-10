@@ -5,6 +5,7 @@ srcml
 *_sliced
 results.json
 config.json
+*_archived
 
 !myriad/config.json
 

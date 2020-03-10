@@ -32,6 +32,7 @@ def observer(tree=None):
 def slice_file(tree, observer_function, ordering=[]):
     print('performing file slice')
     print(ordering)
+    global args
     # tree is the tree to be sliced
     # observer function is a function that returns whether or not the slice is valid
     # consider different ways to slice the tree (in terms of node traversal order)
@@ -180,7 +181,7 @@ def calc_slice_reduction(path, target_file):
     return (original_file_length - sliced_file_length) / original_file_length * 100.0
 
 
-def slice(path, target_file, order, should_slice_directory=True):
+def slice(path, target_file, order):
 
     global sliced_dir, sliced_target
     print('creating cloned xml-ified project')
@@ -191,7 +192,7 @@ def slice(path, target_file, order, should_slice_directory=True):
     print('beginning slice...')
 
     import sys
-    if should_slice_directory:
+    if args.slice_directory:
         slice_directory(observer)
     file_slice_operation_count = slice_file(tree, observer, order)
 
@@ -228,6 +229,7 @@ if __name__ == "__main__":
     parser.add_argument('-o', '--order', nargs='+', help='<optional> node traversal ordering', required=False)
     parser.add_argument('--slice-all-nodes', help='<optional> flag, whether to slice all xml nodes or just the ones related to code blocks', action='store_true')
     parser.add_argument('--slice-only-order', help='<optional> flag, whether to slice just the nodes listed in -o order', action='store_true')
+    parser.add_argument('--slice-directory', help='<optional> flag, whether to slice directory', action='store_true')
     args = parser.parse_args()
     if args.order is None:
         args.order = []
@@ -242,10 +244,10 @@ if __name__ == "__main__":
     # renaming and saving a copy of the sliced directory
     archive_name = f'{config["project_dir"]}_{args.order}_{args.slice_all_nodes}_{args.slice_only_order}'
     i = 0
-    while os.path.isdir(f'{archive_name}_{i}_sliced'):
+    while os.path.isdir(f'{archive_name}_{i}_archived'):
         # TODO should really check if the configs are both the same here
         i += 1
-    archive_name = f'{archive_name}_{i}_sliced'
+    archive_name = f'{archive_name}_{i}_archived'
     shutil.move(sliced_dir, archive_name)
     shutil.copy('./config.json', archive_name + '/config.json')
 
