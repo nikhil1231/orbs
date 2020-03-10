@@ -16,7 +16,7 @@
 #$ -t 1-2
 
 # Set the name of the job.
-#$ -N array-params
+#$ -N mg-orbs
 
 # copy repo to scratch dir
 rm -R ~/Scratch/work-dir
