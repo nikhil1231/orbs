@@ -21,6 +21,11 @@
 # Your work should be done in $TMPDIR 
 cd $TMPDIR
 
+python --version
+python3 --version
+
+echo starting copy-and-run.sh
+
 # Run the application and put the output into a file called date.txt
 # /bin/date > date.txt
 /home/zcabyih/Scratch/orbs/myriad/copy-and-run.sh
