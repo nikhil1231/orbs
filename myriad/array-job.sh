@@ -12,19 +12,20 @@
 # Request 10 gigabyte of TMPDIR space (default is 10 GB)
 #$ -l tmpfs=10G
 
-# Set up the job array.  In this instance we have requested 4 tasks
-# numbered 1 to 4.
-#$ -t 1-4
+# Set up the job array, request tasks 1-n
+#$ -t 1-2
 
 # Set the name of the job.
 #$ -N array-params
 
+# copy repo to scratch dir
+rm -R ~/Scratch/work-dir
+mkdir ~/Scratch/work-dir
+cp -R ~/orbs ~/Scratch/work-dir
+
 # Set the working directory to somewhere in your scratch space.
 #$ -wd ~/Scratch/work-dir
 
-# copy repo to scratch dir
-rm -R ~/Scratch/work-dir
-cp -R ~/orbs ~/Scratch/work-dir
 
 # Parse parameter file to get variables.
 number=$SGE_TASK_ID

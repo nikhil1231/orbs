@@ -17,6 +17,8 @@ if __name__ == "__main__":
     print('=' * 10 + 'slice.py' + '=' * 10)
     print(args)
     config = init_slicer('~/Scratch/work-dir/myriad/config.json')
+    import json
+    print(json.dumps(config, indent=4))
     # TODO add directory as an order option
     slice(config['project_dir'], config['target_file'], args.order)
     print(calc_slice_reduction(config['project_dir'], config['target_file']))
