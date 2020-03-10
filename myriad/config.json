@@ -1,0 +1,6 @@
+{
+	"project_dir": "~/Scratch/work-dir/projects/c/rosetta_lzw",
+	"target_file": "main.c",
+	"run_command": "./a.out",
+	"compilation_instructions": ["gcc-8 main.c"]
+}

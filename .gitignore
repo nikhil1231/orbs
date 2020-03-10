@@ -6,6 +6,8 @@ srcml
 results.json
 config.json
 
+!myriad/config.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

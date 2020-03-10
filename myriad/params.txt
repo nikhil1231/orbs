@@ -1,0 +1,6 @@
+1 -o comment _ _ _ --slice-only-order
+1 -o decl_stmt expr_stmt _ _ _
+1 -o if _ _ _ _
+1 -o if _ _ _ _
+1 -o if _ _ _ _
+
