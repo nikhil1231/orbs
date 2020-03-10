@@ -51,6 +51,12 @@ def slice_file(tree, observer_function, ordering=[]):
                 queue.append(child)
 
         ordered_nodes = sorted(ordered_nodes, key=lambda x: sort_nodes_by_type(x, ordering))
+        if not args.slice_all_nodes:
+            # TODO also add mode to ONLY slice out elements listed in ordering
+            code_node_types = ['if', 'else', 'function', 'comment', 'include', 'block', 'expr_stmt', 'decl_stmt']
+            ordered_nodes = list(filter(lambda x: get_node_type(x[1]) in code_node_types, ordered_nodes))
+        if args.slice_only_order:
+            ordered_nodes = list(filter(lambda x: get_node_type(x[1]) in ordering, ordered_nodes))
 
         slice_progress_bar = tqdm(total=len(ordered_nodes))
 
@@ -212,6 +218,18 @@ if __name__ == "__main__":
     # once we have a minimal directory, start slicing individual files
     # convert project directory to srcML directory with util file and slice file trees
     # (the order we traverse the directory with files to slice as well as the order we slice files in is something to test)
+
+    import argparse
+    parser = ArgumentParser()
+    parser.add_argument('-o', '--order', nargs='+', help='<optional> node traversal ordering', required=False)
+    parser.add_argument('--slice-all-nodes', help='<optional> flag, whether to slice all xml nodes or just the ones related to code blocks', action='store_true')
+    parser.add_argument('--slice-only-order', help='<optional> flag, whether to slice just the nodes listed in -o order', action='store_true')
+    args = parser.parse_args()
+    if args.order is None:
+        args.order = []
     print('=' * 10 + 'slice.py' + '=' * 10)
+    print(args)
     config = init_slicer()
-    slice(config['project_dir'], config['target_file'], [])
+    # TODO add directory as an order option
+    slice(config['project_dir'], config['target_file'], args.order)
+    print(calc_slice_reduction(config['project_dir'], config['target_file']))
