@@ -21,6 +21,7 @@ def observer(tree=None):
     try:
         convert_to_source(sliced_dir, sliced_target)
     except:
+        print('converting to source failed')
         return False
     from observer import observe_slice
 
@@ -59,7 +60,7 @@ def slice_file(tree, observer_function, ordering=[]):
             ordered_nodes = list(filter(lambda x: get_node_type(x[1]) in code_node_types, ordered_nodes))
         if args.slice_only_order:
             ordered_nodes = list(filter(lambda x: get_node_type(x[1]) in ordering, ordered_nodes))
-
+        # print(list(map(lambda x: get_node_type(x[1]), ordered_nodes)))
         slice_progress_bar = tqdm(total=len(ordered_nodes))
 
         while len(ordered_nodes):
@@ -86,7 +87,7 @@ def slice_file(tree, observer_function, ordering=[]):
     from srcML_util import convert_to_source
     convert_to_source(sliced_dir, sliced_target)
 
-    print(f'file slice complete in {passes} passes, recompiling project')
+    print(f'file slice complete in {operation_count} operations and {passes} passes, recompiling project')
     from observer import compile_project
 
     compile_project(sliced_dir)
@@ -240,7 +241,7 @@ if __name__ == "__main__":
     file_slice_operation_count = slice(config['project_dir'], config['target_file'], args.order)
     reduction_percent = calc_slice_reduction(config['project_dir'], config['target_file'])
     results = {"file_slice_operation_count": file_slice_operation_count, "reduction_percent": reduction_percent}
-
+    print(f'{reduction_percent}% reduction in main filesize with {file_slice_operation_count} slice operations')
     # renaming and saving a copy of the sliced directory
     archive_name = f'{config["project_dir"]}_{args.order}_{args.slice_all_nodes}_{args.slice_only_order}'
     i = 0
