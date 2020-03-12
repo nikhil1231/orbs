@@ -56,7 +56,7 @@ def slice_file(tree, observer_function, ordering=[]):
         ordered_nodes = sorted(ordered_nodes, key=lambda x: sort_nodes_by_type(x, ordering))
         if not args.slice_all_nodes:
             # TODO also add mode to ONLY slice out elements listed in ordering
-            code_node_types = ['if', 'else', 'function', 'comment', 'include', 'block', 'expr_stmt', 'decl_stmt']
+            code_node_types = ['if_stmt', 'if', 'else', 'function', 'comment', 'include', 'block', 'expr_stmt', 'decl_stmt']
             ordered_nodes = list(filter(lambda x: get_node_type(x[1]) in code_node_types, ordered_nodes))
         if args.slice_only_order:
             ordered_nodes = list(filter(lambda x: get_node_type(x[1]) in ordering, ordered_nodes))

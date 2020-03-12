@@ -75,14 +75,17 @@ def observe_slice(slice_dir):
     global compilation_time_distribution
 
     for instruction in compilation_instructions:
-        exit_code = run(instruction.split(' '), capture_output=True, cwd=slice_dir)
-    if exit_code.returncode != 0:
-        return False
+        try:
+            exit_code = run(instruction.split(' '), capture_output=True, cwd=slice_dir)
+        except:
+            return False
+        if exit_code.returncode != 0:
+            return False
 
     timeout_threshold = 1.96 * execution_time_distribution[1] + execution_time_distribution[0]
     try:
         observation = run(run_command.split(' '), capture_output=True, cwd=slice_dir, timeout=timeout_threshold)
-    except subprocess.TimeoutExpired:
+    except:
         return False
 
     global oracle
