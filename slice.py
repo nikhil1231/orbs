@@ -124,6 +124,7 @@ def slice_directory(observer_function):
 
     total_files = sum([len(files) for r, d, files in os.walk(sliced_dir)])
 
+    slice_operations = 0
     # pbar = tqdm(total=total_files)
     while len(queue) != 0:
         dir_path = queue.pop(0)
@@ -146,6 +147,7 @@ def slice_directory(observer_function):
                     shutil.rmtree(full_path)
 
                     traversed_files = subdir_count
+                    slice_operations += 1
                     observation = observer_function()  # replace this with real observer func
                     if observation:
                         # we can remove, dont do anything
@@ -173,13 +175,29 @@ def slice_directory(observer_function):
     # pbar.close()
 
     shutil.rmtree('./temp')
-    pass
+    return slice_operations
 
 
 def calc_slice_reduction(path, target_file):
     original_file_length = len(open(os.path.join(path, target_file), 'r').readlines())
     sliced_file_length = len(open(os.path.join(sliced_dir, target_file), 'r').readlines())
-    return (original_file_length - sliced_file_length) / original_file_length * 100.0
+    file_reduction = (original_file_length - sliced_file_length) / original_file_length * 100.0
+
+    def get_size(start_path):
+        total_size = 0
+        for dirpath, dirnames, filenames in os.walk(start_path):
+            for f in filenames:
+                fp = os.path.join(dirpath, f)
+                # skip if it is symbolic link
+                if not os.path.islink(fp):
+                    total_size += os.path.getsize(fp)
+        return total_size
+
+    original_folder_size = get_size(path)
+    sliced_folder_size = get_size(sliced_dir)
+    dir_reduction = (original_folder_size - sliced_folder_size) / original_folder_size * 100.0
+
+    return file_reduction, dir_reduction
 
 
 def slice(path, target_file, order):
@@ -193,11 +211,12 @@ def slice(path, target_file, order):
     print('beginning slice...')
 
     import sys
+    dir_slice_operation_count = 0
     if args.slice_directory:
-        slice_directory(observer)
+        dir_slice_operation_count = slice_directory(observer)
     file_slice_operation_count = slice_file(tree, observer, order)
 
-    return file_slice_operation_count
+    return file_slice_operation_count, dir_slice_operation_count
 
 
 def init_slicer(config_path='./config.json'):
@@ -238,19 +257,21 @@ if __name__ == "__main__":
     print(args)
     config = init_slicer()
     # TODO add directory as an order option
-    file_slice_operation_count = slice(config['project_dir'], config['target_file'], args.order)
-    reduction_percent = calc_slice_reduction(config['project_dir'], config['target_file'])
-    results = {"file_slice_operation_count": file_slice_operation_count, "reduction_percent": reduction_percent}
-    print(f'{reduction_percent}% reduction in main filesize with {file_slice_operation_count} slice operations')
+    file_slice_operation_count, dir_slice_operation_count = slice(config['project_dir'], config['target_file'], args.order)
+    file_reduction_percent, dir_reduction_percent = calc_slice_reduction(config['project_dir'], config['target_file'])
+    results = {"file_slice_operation_count": file_slice_operation_count, "file_reduction_percent": file_reduction_percent,
+               "dir_slice_operation_count": dir_slice_operation_count, "dir_reduction_percent": dir_reduction_percent}
+    results['cli'] = sys.argv
+    print(f'{file_reduction_percent}% reduction in main filesize with {file_slice_operation_count} slice operations')
     # renaming and saving a copy of the sliced directory
-    archive_name = f'{config["project_dir"]}_{args.order}_{args.slice_all_nodes}_{args.slice_only_order}'
+    archive_name = f'{config["project_dir"]}'
     i = 0
     while os.path.isdir(f'{archive_name}_{i}_archived'):
-        # TODO should really check if the configs are both the same here
         i += 1
     archive_name = f'{archive_name}_{i}_archived'
     shutil.move(sliced_dir, archive_name)
-    shutil.copy('./config.json', archive_name + '/config.json')
+    with open(archive_name + '/config.json', 'w+') as config_file:
+        config_file.write(json.dumps(config), indent=4)
 
     with open(archive_name + '/results.json', 'w+') as results_file:
         results_file.write(json.dumps(results, indent=4))
