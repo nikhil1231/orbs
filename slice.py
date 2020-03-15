@@ -271,7 +271,7 @@ if __name__ == "__main__":
     archive_name = f'{archive_name}_{i}_archived'
     shutil.move(sliced_dir, archive_name)
     with open(archive_name + '/config.json', 'w+') as config_file:
-        config_file.write(json.dumps(config), indent=4)
+        config_file.write(json.dumps(config, indent=4))
 
     with open(archive_name + '/results.json', 'w+') as results_file:
         results_file.write(json.dumps(results, indent=4))
