@@ -184,19 +184,29 @@ def calc_slice_reduction(path, target_file):
 
     def get_size(start_path):
         total_size = 0
+        total_files = 0
         for dirpath, dirnames, filenames in os.walk(start_path):
             for f in filenames:
                 fp = os.path.join(dirpath, f)
                 # skip if it is symbolic link
-                if not os.path.islink(fp):
-                    total_size += os.path.getsize(fp)
-        return total_size
+                if os.path.islink(fp):
+                    continue
+                # don't include srcML results
+                if f == sliced_target:
+                    continue
+                # don't include .git folder
+                split_path = fp.split('/')
+                if '.git' in split_path:
+                    continue
+                total_size += os.path.getsize(fp)
+                total_files += 1
+        return total_size, total_files
 
-    original_folder_size = get_size(path)
-    sliced_folder_size = get_size(sliced_dir)
+    original_folder_size, original_file_count = get_size(path)
+    sliced_folder_size, sliced_file_count = get_size(sliced_dir)
     dir_reduction = (original_folder_size - sliced_folder_size) / original_folder_size * 100.0
-
-    return file_reduction, dir_reduction
+    file_count_reduction = (original_file_count - sliced_file_count) / original_file_count * 100.0
+    return file_reduction, dir_reduction, file_count_reduction
 
 
 def slice(path, target_file, order):
@@ -257,9 +267,9 @@ if __name__ == "__main__":
     config = init_slicer()
     # TODO add directory as an order option
     file_slice_operation_count, dir_slice_operation_count = slice(config['project_dir'], config['target_file'], args.order)
-    file_reduction_percent, dir_reduction_percent = calc_slice_reduction(config['project_dir'], config['target_file'])
+    file_reduction_percent, dir_reduction_percent, file_count_reduction_percent = calc_slice_reduction(config['project_dir'], config['target_file'])
     results = {"file_slice_operation_count": file_slice_operation_count, "file_reduction_percent": file_reduction_percent,
-               "dir_slice_operation_count": dir_slice_operation_count, "dir_reduction_percent": dir_reduction_percent}
+               "dir_slice_operation_count": dir_slice_operation_count, "dir_reduction_percent": dir_reduction_percent, "file_count_reduction_percent": file_count_reduction_percent}
     results['cli'] = sys.argv
     print(f'{file_reduction_percent}% reduction in main filesize with {file_slice_operation_count} slice operations')
     # renaming and saving a copy of the sliced directory
