@@ -12,11 +12,13 @@ compilation_instructions = []
 compilation_time_distribution = (0, 1)  # mean, variance
 execution_time_distribution = (0, 1)
 
+use_shell = False
+
 
 def compile_project(project_dir):
     global compilation_instructions
     for instruction in compilation_instructions:
-        exit_code = run(instruction.split(' '), capture_output=True, cwd=project_dir)
+        exit_code = run(instruction.split(' '), capture_output=True, cwd=project_dir, shell=use_shell)
 
 
 def construct_oracle(project_dir, run_command_, compilation_instructions_=[], initialisation_samples=10):
@@ -54,7 +56,7 @@ def construct_oracle(project_dir, run_command_, compilation_instructions_=[], in
     execution_times = []
     for i in range(initialisation_samples):
         start = time.time_ns()
-        oracle = run(run_command.split(' '), capture_output=True, cwd=project_dir)
+        oracle = run(run_command.split(' '), capture_output=True, cwd=project_dir, shell=use_shell)
         delta = time.time_ns() - start
         execution_times.append(delta / 1000000000)
     execution_time_distribution = norm.fit(execution_times)
@@ -76,7 +78,7 @@ def observe_slice(slice_dir):
 
     for instruction in compilation_instructions:
         try:
-            exit_code = run(instruction.split(' '), capture_output=True, cwd=slice_dir)
+            exit_code = run(instruction.split(' '), capture_output=True, cwd=slice_dir, shell=use_shell)
         except:
             return False
         if exit_code.returncode != 0:
@@ -84,7 +86,7 @@ def observe_slice(slice_dir):
 
     timeout_threshold = 1.96 * execution_time_distribution[1] + execution_time_distribution[0]
     try:
-        observation = run(run_command.split(' '), capture_output=True, cwd=slice_dir, timeout=timeout_threshold)
+        observation = run(run_command.split(' '), capture_output=True, cwd=slice_dir, timeout=timeout_threshold, shell=use_shell)
     except:
         return False
 
