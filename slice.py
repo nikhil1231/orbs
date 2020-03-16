@@ -142,17 +142,18 @@ def slice_directory(observer_function):
                     subdir_count = sum([len(files) for r, d, files in os.walk(full_path)])
                     # saving copy of directory and removing
                     shutil.move(full_path, f'./temp/{child}')
-                    traversed_files = subdir_count
                     slice_operations += 1
                     observation = observer_function()
                     if observation:
                         # we can remove, dont do anything
+                        traversed_files = subdir_count
                         pass
                     else:
                         # we are unable to remove this directory, add it back in and append it's children paths to the queue
                         shutil.move(f'./temp/{child}', full_path)
                         for subdir in os.listdir(full_path):
                             queue.append(os.path.join(full_path, subdir))
+                        traversed_files = 1
                 else:
                     # remove file and observe
                     traversed_files = 1
