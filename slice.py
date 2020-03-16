@@ -124,7 +124,7 @@ def slice_directory(observer_function):
     total_files = sum([len(files) for r, d, files in os.walk(sliced_dir)])
 
     slice_operations = 0
-    # pbar = tqdm(total=total_files)
+    pbar = tqdm(total=total_files)
     while len(queue) != 0:
         dir_path = queue.pop(0)
         if os.path.isdir(dir_path):
@@ -136,31 +136,27 @@ def slice_directory(observer_function):
                 full_path = os.path.join(dir_path, child)
                 # print(child, full_path)
                 if os.path.isdir(full_path):
-                    traversed_files = 0
-                    # try removal and observe
+                    # remove dir and observe
                     # counting subdirectories that might get removed
+                    traversed_files = 0
                     subdir_count = sum([len(files) for r, d, files in os.walk(full_path)])
-                    # print('sbc', child, subdir_count)
                     # saving copy of directory and removing
-                    shutil.copytree(full_path, f'./temp/{child}')
-                    shutil.rmtree(full_path)
-
+                    shutil.move(full_path, f'./temp/{child}')
                     traversed_files = subdir_count
                     slice_operations += 1
-                    observation = observer_function()  # replace this with real observer func
+                    observation = observer_function()
                     if observation:
                         # we can remove, dont do anything
                         pass
                     else:
-                        # we are unable to remove this directory, add it back in and append it's children paths to the queu
+                        # we are unable to remove this directory, add it back in and append it's children paths to the queue
                         shutil.move(f'./temp/{child}', full_path)
                         for subdir in os.listdir(full_path):
                             queue.append(os.path.join(full_path, subdir))
                 else:
                     # remove file and observe
                     traversed_files = 1
-                    shutil.copy(full_path, f'./temp/{child}')
-                    os.remove(full_path)
+                    shutil.move(full_path, f'./temp/{child}')
 
                     observation = observer_function()  # replace this with real observer func
                     if observation:
@@ -170,8 +166,8 @@ def slice_directory(observer_function):
                         # we are unable to remove this file, add it back
                         shutil.move(f'./temp/{child}', full_path)
     #         print(traversed_files)
-    #         pbar.update(traversed_files)
-    # pbar.close()
+                pbar.update(traversed_files)
+    pbar.close()
 
     shutil.rmtree('./temp')
     return slice_operations
