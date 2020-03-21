@@ -222,8 +222,10 @@ def slice(path, target_file, order):
     import sys
     dir_slice_operation_count = 0
     if args.slice_directory:
-        dir_slice_operation_count = slice_directory(observer)
+        dir_slice_operation_count += slice_directory(observer)
     file_slice_operation_count = slice_file(tree, observer, order)
+    if args.slice_directory_after:
+        dir_slice_operation_count += slice_directory(observer)
 
     return file_slice_operation_count, dir_slice_operation_count
 
@@ -259,6 +261,7 @@ if __name__ == "__main__":
     parser.add_argument('--slice-all-nodes', help='<optional> flag, whether to slice all xml nodes or just the ones related to code blocks', action='store_true')
     parser.add_argument('--slice-only-order', help='<optional> flag, whether to slice just the nodes listed in -o order', action='store_true')
     parser.add_argument('--slice-directory', help='<optional> flag, whether to slice directory', action='store_true')
+    parser.add_argument('--slice-directory-after', help='<optional> flag, whether to slice directory after doing target file slice', action='store_true')
     args = parser.parse_args()
     if args.order is None:
         args.order = []
