@@ -22,7 +22,8 @@ def observer(tree=None):
     try:
         convert_to_source(sliced_dir, sliced_target)
     except:
-        print('converting to source failed')
+        # print('converting to source failed')
+        # likely a directory slice that removed srcML xml file
         return False
     from observer import observe_slice
 
@@ -154,11 +155,11 @@ def slice_directory(observer_function):
                         for subdir in os.listdir(full_path):
                             queue.append(os.path.join(full_path, subdir))
                         traversed_files = 1
-                else:
+                elif os.path.exists(full_path):
                     # remove file and observe
                     traversed_files = 1
                     shutil.move(full_path, f'./temp/{child}')
-
+                    slice_operations += 1
                     observation = observer_function()  # replace this with real observer func
                     if observation:
                         # we can remove, dont do anything
@@ -166,7 +167,9 @@ def slice_directory(observer_function):
                     else:
                         # we are unable to remove this file, add it back
                         shutil.move(f'./temp/{child}', full_path)
-    #         print(traversed_files)
+                else:
+                    # failed compilation might remove files, usually the compiled binary
+                    traversed_files = 1
                 pbar.update(traversed_files)
     pbar.close()
 
